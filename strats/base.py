@@ -48,6 +48,7 @@ class BaseTrader:
         elif forecast < 0:
             if self._position > self._MIN_POSITION:
                 self._position += forecast
+                # TODO Make a comment in the report about going to the target position over the next time slice
                 self._profit -= (forecast * price)  # forecast < 0.
             else:
                 print("{} ( {} ) WARN: Can't short from MIN_POSITION".format(timestamp, self.name))
