@@ -2,15 +2,15 @@
 
 class BaseTrader:
 
-    _MIN_POSITION = -20  # In Bitcoin.
-    _MAX_POSITION = 20  # In Bitcoin.
+    _MIN_POSITION = -10  # In Bitcoin.
+    _MAX_POSITION = 10  # In Bitcoin.
 
     def __init__(self):
         self._position = 0.
         self._profit = 0.
 
     @property
-    def description(self):
+    def name(self):
         raise NotImplementedError
 
     @property
@@ -32,29 +32,29 @@ class BaseTrader:
         Assumes infinite borrow (i.e. we always can buy/sell),
         but applies position limits."""
 
-        print("{} TRADE".format(timestamp))
+        print("{} ( {} ) TRADE".format(timestamp, self.name))
 
         forecast = self._forecast(timestamp, price)
-        print("{} FORECAST: {}".format(timestamp, forecast))
-        print("{} CURRENT POSITION: {}".format(timestamp, self._position))
+        print("{} ( {} ) FORECAST: {}".format(timestamp, self.name, forecast))
+        print("{} ( {} ) CURRENT POSITION: {}".format(timestamp, self.name, self._position))
 
         if forecast > 0:
             if self._position < self._MAX_POSITION:
                 self._position += forecast
                 self._profit -= (forecast * price)
             else:
-                print("{} WARN: Can't long from MAX_POSITION".format(timestamp))
+                print("{} ( {} ) WARN: Can't long from MAX_POSITION".format(timestamp, self.name))
 
         elif forecast < 0:
             if self._position > self._MIN_POSITION:
                 self._position += forecast
                 self._profit -= (forecast * price)  # forecast < 0.
             else:
-                print("{} WARN: Can't short from MIN_POSITION".format(timestamp))
+                print("{} ( {} ) WARN: Can't short from MIN_POSITION".format(timestamp, self.name))
 
-        print("{} NEW POSITION: {}".format(timestamp, self._position))
+        print("{} ( {} ) NEW POSITION: {}".format(timestamp, self.name, self._position))
         print()
 
     def close(self, timestamp, price):
-        print("{} CLOSE: position {} at price {}".format(timestamp, self._position, price))
+        print("{} ( {} ) CLOSE: position {} at price {}".format(timestamp, self.name, self._position, price))
         self._profit += self._position * price

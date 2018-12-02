@@ -8,6 +8,7 @@ class MomentumTrader(base.BaseTrader):
     """ROC momentum from http://www.quantsportal.com/momentum-strategies/."""
 
     _WINDOW = 8
+    # _WINDOW = 30  # For MIN.
 
     def __init__(self, window=_WINDOW):
         super(MomentumTrader, self).__init__()
@@ -19,7 +20,7 @@ class MomentumTrader(base.BaseTrader):
         self.__prices = np.zeros(shape=(self.__window,))
 
     @property
-    def description(self):
+    def name(self):
         return 'ROCMomentum ( window={}, min_pos={}, max_pos={} )'.format(
             self._WINDOW, self._MIN_POSITION, self._MAX_POSITION)
 
