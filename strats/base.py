@@ -38,7 +38,7 @@ class BaseTrader:
         print("{} ( {} ) FORECAST: {}".format(timestamp, self.name, forecast))
         print("{} ( {} ) CURRENT POSITION: {}".format(timestamp, self.name, self._position))
 
-        if forecast > 0:
+        if forecast > 0:  # TODO buy/sell max 1 BTC, without it RL will buy/sell everything each time slice
             if self._position < self._MAX_POSITION:
                 self._position += forecast
                 self._profit -= (forecast * price)
