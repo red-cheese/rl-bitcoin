@@ -17,7 +17,14 @@ ALL_TRADES_AGG_MIN_FILE = 'data/all_trades_min.csv'
 START_MIN = datetime.strptime('2015-09-25 12:35:00.000000', TIME_FORMAT)
 DELTA_MIN = timedelta(minutes=1)
 
+# Frequency -> file with aggregates.
+ALL_FREQUENCIES = {
+    'MIN': ALL_TRADES_AGG_MIN_FILE,
+    'H': ALL_TRADES_AGG_H_FILE,
+}
 
+
+# TODO Support a flag to aggregate by hour and other periods
 def aggregate(in_file=ALL_TRADES_FILE, out_file=ALL_TRADES_AGG_MIN_FILE):
     aggs = []
 
@@ -52,6 +59,13 @@ def aggregate(in_file=ALL_TRADES_FILE, out_file=ALL_TRADES_AGG_MIN_FILE):
         writer = csv.writer(f_out)
         writer.writerows(aggs)
     print('Done')
+
+
+def load_aggregates(frequency):
+    filename = ALL_FREQUENCIES[frequency]
+    with open(filename, 'r') as f:
+        reader = csv.reader(f)
+        return [(timestamp, float(price)) for timestamp, price in reader]
 
 
 def main():
