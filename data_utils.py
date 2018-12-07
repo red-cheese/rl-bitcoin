@@ -8,7 +8,7 @@ ALL_TRADES_FILE = '../all_trades.csv'
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
 # Aggregation by hour.
-ALL_TRADES_AGG_H_FILE = 'data/all_trades_h.csv'
+ALL_TRADES_AGG_H_FILE = '../../data/all_trades_h.csv'
 START_HOUR = datetime.strptime('2015-09-25 13:00:00.000000', TIME_FORMAT)
 DELTA_HOUR = timedelta(hours=1)
 

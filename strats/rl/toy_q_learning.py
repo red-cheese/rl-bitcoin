@@ -6,9 +6,10 @@ import numpy as np
 import data_utils
 
 
+EPSILON = 0.1
 NUM_EPISODES = 10
-ALPHA = 0.1  # "Learning rate".
-GAMMA = 1.  # Discount factor - no discount.
+ALPHA = 1.0  # "Learning rate".
+GAMMA = 0.8  # Discount factor - no discount.
 
 
 class A(enum.Enum):
@@ -60,9 +61,25 @@ def main():
         # Repeat for each state of the episode.
         for j in range(num_steps - 1):  # TODO num_steps or (num_steps - 1) ?
             # Choose the best "a" from "s" using current Q.
-            possible_as_from_s = Q_table[s.position + 1, s.next_return_direction + 1, :]
-            a = np.where(possible_as_from_s == possible_as_from_s.max())
-            a = np.random.choice(a[0])
+
+            if s.position == -1:
+                possible_as_from_s = [A.STAY.value, A.BUY_1.value, A.BUY_2.value]
+            elif s.position == 0:
+                possible_as_from_s = [A.STAY.value, A.BUY_1.value, A.SELL_1.value]
+            else:
+                assert s.position == 1
+                possible_as_from_s = [A.STAY.value, A.SELL_1.value, A.SELL_2.value]
+            possible_as_from_s = np.asarray(possible_as_from_s)
+
+            Q_possible_as_from_s = Q_table[s.position + 1, s.next_return_direction + 1, possible_as_from_s]
+            if np.random.random() >= EPSILON / (i + 1) or i == NUM_EPISODES - 1:
+
+                a = possible_as_from_s[Q_possible_as_from_s == Q_possible_as_from_s.max()]
+                a = np.random.choice(a)
+                was_random = False
+            else:
+                a = np.random.choice(possible_as_from_s)
+                was_random = True
 
             # Take action a. Observe s'.
             if a == A.STAY.value:
@@ -97,7 +114,9 @@ def main():
 
             # Observe r and construct s_prime.
             new_balance = new_cash + new_position * prices[j + 1]  # We are already at the new state -> reward.
-            r = new_balance - balance
+            r = np.sign(new_balance - balance)
+            # r = max(-1, new_balance - balance)
+            # r = min(1, r)
             s_prime = State(position=new_position, next_return_direction=returns[j + 1])
 
             balance = new_balance
@@ -106,7 +125,18 @@ def main():
             # Update Q table.
             sa = (s.position + 1, s.next_return_direction + 1, a)
             max_next_Q = Q_table[s_prime.position + 1, s_prime.next_return_direction + 1, :].max()
-            Q_table[sa] += ALPHA * (r + GAMMA * max_next_Q - Q_table[sa])
+            deltaQ = ALPHA * (r + GAMMA * max_next_Q - Q_table[sa])
+            # deltaQ = ALPHA * r
+            if i != NUM_EPISODES - 1:
+                Q_table[sa] += deltaQ
+
+            if not was_random and s.next_return_direction == -1 and NUM_EPISODES == 1:
+                print('Step', j, '/ s.position', s.position, '/ s.next_return', s.next_return_direction,
+                      '/ a', a, '/ was random', was_random, '/ s_prime.position', s_prime.position,
+                      '/ reward', r, '/ delta Q', deltaQ, '/ balance', balance)
+
+            # if j == 1000:
+            #     import sys; sys.exit(0)
 
             s = s_prime
 
@@ -122,6 +152,11 @@ def main():
             print()
         print('Optimal profit:', (np.fabs(prices[1:] - prices[:-1])).sum())
         print()
+
+        # Plot total profit wrt episode
+        # Plot BTC price with Up/Down decisions
+        # Print warning when we make a wrong action: Compare optimal matrix and final/wrt to step Q-value matrix
+
         print()
 
 
