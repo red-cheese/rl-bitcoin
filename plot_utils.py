@@ -8,8 +8,16 @@ import os
 PLOTS_DIR = './plots/'  # Path from main.py.
 
 
+def _create_dir(dir_path):
+    if not os.path.isdir(dir_path):
+        os.mkdir(dir_path)
+
+
 def plot_episode_profits(model_name, episode_profits, optimal_profit):
     """Total profit wrt episode."""
+
+    dir_path = os.path.join(PLOTS_DIR, model_name)
+    _create_dir(dir_path)
 
     num_episodes = len(episode_profits)
     plt.title('Total profit')
@@ -21,8 +29,9 @@ def plot_episode_profits(model_name, episode_profits, optimal_profit):
     plt.minorticks_on()
     plt.grid(which='minor', linestyle=':')
     plt.grid(which='major', linestyle=':')
-    plt.savefig(os.path.join(PLOTS_DIR, model_name, 'episode_profits.png'))
+    plt.savefig(os.path.join(dir_path, 'episode_profits.png'))
     # plt.show()
+    plt.gcf().clear()
 
 
 def plot_step_trades(model_name, episode_idx, all_prices, all_trades):
@@ -32,8 +41,11 @@ def plot_step_trades(model_name, episode_idx, all_prices, all_trades):
     all_prices = np.asarray(all_prices)
     all_trades = np.asarray(all_trades)
 
-    # Plot the last 500 prices/trades.
-    num = 500
+    dir_path = os.path.join(PLOTS_DIR, model_name)
+    _create_dir(dir_path)
+
+    # Plot the last 300 prices/trades.
+    num = 300
     prices = all_prices[-(num + 1):-1]
     trades = all_trades[-num:]
 
@@ -47,5 +59,6 @@ def plot_step_trades(model_name, episode_idx, all_prices, all_trades):
     plt.minorticks_on()
     plt.grid(which='minor', linestyle=':')
     plt.grid(which='major', linestyle=':')
-    plt.savefig(os.path.join(PLOTS_DIR, model_name, 'episode{}_trades.png'.format(episode_idx)))
+    plt.savefig(os.path.join(dir_path, 'episode{}_trades.png'.format(episode_idx)))
     # plt.show()
+    plt.gcf().clear()

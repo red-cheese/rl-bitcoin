@@ -1,14 +1,12 @@
 
 
-import matplotlib.pyplot as plt
 import numpy as np
+import plot_utils
 
-import data_utils
 
-
-EPSILON = 0.01  # E-greedy Q-learning.
-NUM_EPISODES = 10
-ALPHA = 1.0  # "Learning rate".
+EPSILON = 0.005  # E-greedy Q-learning.
+NUM_EPISODES = 5
+ALPHA = 0.8  # "Learning rate".
 GAMMA = 0.8  # Discount factor - no discount.
 
 
@@ -42,6 +40,10 @@ class State:
         self.future_return = future_return
 
 
+MODEL_NAME = 'toyq_episodes{}_eps{}_alpha{}_gamma{}_minpos{}_maxpos{}_a{}'.format(
+    NUM_EPISODES, EPSILON, ALPHA, GAMMA, MIN_POSITION, MAX_POSITION, len(A.ALL_ACTIONS))
+
+
 def is_allowed(s, a):
     return MIN_POSITION <= s.position + a <= MAX_POSITION
 
@@ -52,9 +54,7 @@ def get_allowed_actions(s):
     return allowed_actions
 
 
-def main():
-    data = data_utils.load_aggregates('H')
-
+def run(data):
     # Preprocess to have returns: -1, 0, 1.
     prices = np.array([price for timestamp, price in data])
     returns = np.sign(prices[1:] - prices[:-1]).astype(np.int32)  # returns[i] = sign(prices[i + 1] - prices[i])
@@ -65,6 +65,7 @@ def main():
     # Pairs of (s: State, a: A), where s = (position, future return).
     Q_table = np.zeros(shape=(3, 3, 5))
 
+    episode_profits = []
     for i in range(NUM_EPISODES):
         print('Play episode', i)
         s = State(position=0, future_return=returns[0])
@@ -72,6 +73,7 @@ def main():
         balance = 0  # Current balance = cash + position * current price.
 
         # Repeat for each state of the episode.
+        trades = []
         for j in range(num_steps):
             # Choose the best "a" from "s" using current Q.
             possible_as_from_s = get_allowed_actions(s)
@@ -84,6 +86,7 @@ def main():
                 a = np.random.choice(possible_as_from_s)
                 chose_random_action = True
 
+            trades.append(np.sign(a))
             # Take action a. Observe s'.
             new_position = s.position + a
             new_cash = cash - a * prices[j]
@@ -100,7 +103,7 @@ def main():
                 s_a_idx = (s.position + 1, s.future_return + 1, a + 2)
                 max_next_Q = Q_table[s_prime.position + 1, s_prime.future_return + 1, :].max()
                 delta_Q = ALPHA * (r + GAMMA * max_next_Q - Q_table[s_a_idx])
-                if i != NUM_EPISODES - 1:  # TODO ???
+                if i != NUM_EPISODES - 1:  # TODO Maybe will be fine without it???
                     Q_table[s_a_idx] += delta_Q
             else:
                 delta_Q = None  # No updates to Q in the terminal state.
@@ -111,15 +114,20 @@ def main():
                       '/ a', a, '/ s_prime.position', s_prime.position,
                       '/ reward', r, '/ delta Q', delta_Q, '/ old balance', balance, '/ new balance', new_balance)
 
-            # Check Q table. TODO?
+            # Check Q table.
+            # TODO Print warning when we make a wrong action: Compare optimal matrix and final/wrt to step Q-value mx
 
             balance = new_balance
             cash = new_cash
             s = s_prime
 
+        # Plot episode trades.
+        plot_utils.plot_step_trades(MODEL_NAME, i, prices, trades)
+
         print('End episode', i)
         assert balance == cash + s.position * prices[-1]
         print('Total episode profit:', balance)
+        episode_profits.append(balance)
         print('Target profit:', optimal_profit)
         print('Q table:')
         for x in range(Q_table.shape[0]):  # position
@@ -132,11 +140,5 @@ def main():
         print('================================')
         print()
 
-        # Plot total profit wrt episode
-        # Plot BTC price with Up/Down decisions
-
-        # Print warning when we make a wrong action: Compare optimal matrix and final/wrt to step Q-value matrix
-
-
-if __name__ == '__main__':
-    main()
+    # Plot total profit wrt episode.
+    plot_utils.plot_episode_profits(MODEL_NAME, episode_profits, optimal_profit)
