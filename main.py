@@ -6,6 +6,7 @@ import sys
 
 import strats.momentum
 import strats.rand
+import strats.rl.mc
 import strats.rl.toy_q_learning
 
 
@@ -45,6 +46,10 @@ def toy_q(data):
     strats.rl.toy_q_learning.run(data)
 
 
+def mc(data):
+    strats.rl.mc.run(data)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--frequency', help='Frequency of data: MIN (minute) or H (hour)')
@@ -52,7 +57,7 @@ def main():
     args = parser.parse_args(sys.argv[1:])
 
     frequency = args.frequency if args.frequency else 'H'
-    alg = args.alg if args.alg else 'toy_q'
+    alg = args.alg if args.alg else 'mc'
 
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
@@ -63,6 +68,8 @@ def main():
         rand(data)
     elif alg == 'toy_q':
         toy_q(data)
+    elif alg == 'mc':
+        mc(data)
     else:
         raise ValueError("Unknown algorithm: '{}'".format(alg))
 
