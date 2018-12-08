@@ -5,7 +5,7 @@ import plot_utils
 
 
 EPSILON = 0.005  # E-greedy Q-learning.
-NUM_EPISODES = 5
+NUM_EPISODES = 10
 ALPHA = 0.8  # "Learning rate".
 GAMMA = 0.8  # Discount factor - no discount.
 
