@@ -2,13 +2,15 @@
 
 import argparse
 import data_utils
+import plot_utils
 import sys
 
 import strats.momentum
 import strats.rand
+import strats.rl.baseline
 import strats.rl.mc
 import strats.rl.q
-import strats.rl.toy_q_learning
+import strats.rl.setup
 
 
 def momentum(data):
@@ -43,51 +45,41 @@ def rand(data):
     print('\t{}'.format(rand_trader.name), rand_trader.profit)
 
 
-def toy_q(data):
-    strats.rl.toy_q_learning.run(data)
-
-
-def mc(data, mode):
-    strats.rl.mc.run(data, mode=mode)
-
-
-def q(data):
-    strats.rl.q.run(data)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--frequency', help='Frequency of data: MIN (minute) or H (hour)')
-    parser.add_argument('--alg', help='Trading algorithm')
     args = parser.parse_args(sys.argv[1:])
-
     frequency = args.frequency if args.frequency else 'H'
-    alg = args.alg if args.alg else 'q'
 
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
 
-    if alg == 'momentum':
-        momentum(data)
-    elif alg == 'random':
-        rand(data)
-    # elif alg == 'toy_q':
-    #     toy_q(data)
-    elif alg == 'mc_first_visit':
-        mc(data, 'first_visit')
-    elif alg == 'mc_every_visit':
-        mc(data, 'every_visit')
-    elif alg == 'q':
-        q(data)
-    else:
-        raise ValueError("Unknown algorithm: '{}'".format(alg))
+    env = strats.rl.setup.Environment()
+
+    mc_1st_model_name, mc_1st_episode_rewards, mc_1st_episode_profits = strats.rl.mc.run(env, data, mode='First_Visit')
+    mc_every_model_name, mc_every_episode_rewards, mc_every_episode_profits = strats.rl.mc.run(env, data,
+                                                                                               mode='Every_Visit')
+    q_model_name, q_episode_rewards, q_episode_profits = strats.rl.q.run(env, data)
+    baseline_model_name, baseline_episode_rewards, baseline_episode_profits = strats.rl.baseline.run(env, data)
+
+    # Plot all episode rewards to compare.
+    plot_utils.plot_episode_results(
+        env.name,
+        [q_model_name, baseline_model_name, mc_1st_model_name, mc_every_model_name],
+        [q_episode_rewards, baseline_episode_rewards, mc_1st_episode_rewards, mc_every_episode_rewards],
+        ylabel='Reward')
+
+    # Plot all episode profits to compare.
+    plot_utils.plot_episode_results(
+        env.name,
+        [q_model_name, baseline_model_name, mc_1st_model_name, mc_every_model_name],
+        [q_episode_profits, baseline_episode_profits, mc_1st_episode_profits, mc_every_episode_profits])
 
     print()
     print('=============')
     print('Start date:', start_date)
     print('End date:', end_date)
     print('Frequency:', frequency)
-    print('Strategy:', alg)
 
 
 if __name__ == '__main__':

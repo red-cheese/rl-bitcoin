@@ -3,23 +3,21 @@ import plot_utils
 import strats.rl.setup as setup
 
 
-MODEL_NAME = 'Q-learning'
+MODEL_NAME = 'Baseline'
 
 
-def policy(env, Q_table, s, epsilon):
-    """Returns action from my action space."""
+def baseline_policy(self, s):
+    """Just looks at the first next return and buys/sells as much as it can."""
 
-    allowed_actions = env.get_allowed_actions(s)
+    allowed_actions = self.get_allowed_actions(s)
 
-    if np.random.random() < epsilon:
-        return np.random.choice(allowed_actions)
+    if s.is_terminal:
+        assert len(allowed_actions) == 1
+        return allowed_actions[0]
 
-    else:
-        state_idx = env.state_to_idx(s)
-        actions_indices = np.asarray([env.action_to_idx(a) for a in allowed_actions])
-        Q_allowed_actions = Q_table[(*state_idx, actions_indices)]
-        max_Q_actions = allowed_actions[Q_allowed_actions == Q_allowed_actions.max()]
-        return np.random.choice(max_Q_actions)
+    allowed_actions_sign = np.sign(allowed_actions)
+    good_actions = allowed_actions[(allowed_actions_sign == np.sign(s.future_returns[0])) | (allowed_actions == 0)]
+    return good_actions[np.argmax(np.abs(good_actions))]
 
 
 def run(env: setup.Environment, data):
@@ -31,14 +29,6 @@ def run(env: setup.Environment, data):
     returns = np.zeros(shape=(prices.shape[0] + env.num_future_returns - 1,), dtype=np.int32)
     returns[:-env.num_future_returns] = np.sign(prices[1:] - prices[:-1])
     num_steps = prices.shape[0]
-
-    # Init Q(s, a) with zeros.
-    # Pairs of (s: State, a: A), where s = (position, future returns, is_terminal).
-    shape = [env.max_position - env.min_position + 1]  # Positions.
-    shape.extend([3] * env.num_future_returns)  # Sequences of future returns.
-    shape.append(2)  # is_terminal.
-    shape.append(len(env.all_actions))  # Action.
-    Q_table = np.zeros(shape=tuple(shape))
 
     episode_rewards = []  # Total episode rewards.
     episode_profits = []  # Total episode profits in $.
@@ -52,24 +42,13 @@ def run(env: setup.Environment, data):
         realised_rewards = []
 
         for step_idx in range(num_steps):
-            # Choose the best "a" from "s" according to the policy based on Q.
-            epsilon = setup.compute_epsilon(episode_idx)
-            a = policy(env, Q_table, s, epsilon)
+            a = baseline_policy(env, s)
             s_prime = env.NextState(s, a, step_idx, returns)
             r = env.compute_reward(s, a)
 
             realised_states.append(s)
             realised_actions.append(a)
             realised_rewards.append(r)
-
-            # Q is updated on each step (except for the terminal state).
-            if s_prime is not None:
-                state_action_idx = env.state_action_to_idx(s, a)
-                s_prime_idx = env.state_to_idx(s_prime)
-                allowed_actions_from_s_prime = np.asarray([env.action_to_idx(aa)
-                                                           for aa in env.get_allowed_actions(s_prime)])
-                max_Q_s_prime = Q_table[(*s_prime_idx, allowed_actions_from_s_prime)].max()
-                Q_table[state_action_idx] += env.alpha * (r + env.gamma * max_Q_s_prime - Q_table[state_action_idx])
 
             # Transition.
             s = s_prime

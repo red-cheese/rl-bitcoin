@@ -13,35 +13,36 @@ def _create_dir(dir_path):
         os.mkdir(dir_path)
 
 
-def plot_episode_profits(model_name, pretty_model_name, episode_profits, optimal_profit, ylabel='Profit$'):
-    """Total profit wrt episode (or other metric, as per ylabel)."""
+def plot_episode_results(env_name, model_names, values, ylabel='Profit$'):
+    """Plots some metric wrt episode (as per ylabel) for given models."""
 
-    dir_path = os.path.join(PLOTS_DIR, model_name)
+    dir_path = os.path.join(PLOTS_DIR, env_name)
     _create_dir(dir_path)
 
-    num_episodes = len(episode_profits)
+    colours = ['b', 'g', 'r', 'orange', 'black', 'm', 'c'][:len(model_names)]
+    for model_name, model_values, c in zip(model_names, values, colours):
+        plt.plot(model_values, label=model_name, c=c)
+
     plt.title('{} per episode'.format(ylabel))
     plt.xlabel('Episode')
     plt.ylabel(ylabel)
-    plt.plot([optimal_profit] * num_episodes, color='r', label='Optimal')
-    plt.plot(episode_profits, label=pretty_model_name)
     plt.legend(loc='lower right')
     plt.minorticks_on()
     plt.grid(which='minor', linestyle=':')
     plt.grid(which='major', linestyle=':')
-    plt.savefig(os.path.join(dir_path, 'episode_{}.png'.format(ylabel.lower())))
-    # plt.show()
+
+    plt.savefig(os.path.join(dir_path, '{}.png'.format(ylabel.lower())))
     plt.gcf().clear()
 
 
-def plot_step_trades(model_name, pretty_model_name, episode_idx, all_prices, all_trades):
+def plot_step_trades(env_name, model_name, episode_idx, all_prices, all_trades):
     """BTC prices with buy/sell/stay decisions."""
 
     assert len(all_prices) == len(all_trades)
     all_prices = np.asarray(all_prices)
     all_trades = np.asarray(all_trades)
 
-    dir_path = os.path.join(PLOTS_DIR, model_name)
+    dir_path = os.path.join(PLOTS_DIR, env_name)
     _create_dir(dir_path)
 
     # Plot the last 100 prices/trades.
@@ -60,6 +61,5 @@ def plot_step_trades(model_name, pretty_model_name, episode_idx, all_prices, all
     plt.minorticks_on()
     plt.grid(which='minor', linestyle=':')
     plt.grid(which='major', linestyle=':')
-    plt.savefig(os.path.join(dir_path, 'episode{}_trades.png'.format(episode_idx)))
-    # plt.show()
+    plt.savefig(os.path.join(dir_path, '{}_episode{}_trades.png'.format(model_name, episode_idx)))
     plt.gcf().clear()
