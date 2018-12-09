@@ -1,5 +1,10 @@
 
 
+import numpy as np
+import random
+np.random.seed(0)
+random.seed(0)
+
 import argparse
 import data_utils
 import plot_utils
@@ -54,7 +59,7 @@ def main():
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
 
-    env = strats.rl.setup.Environment(alpha=0.5, simple_returns=False)
+    env = strats.rl.setup.Environment()
 
     mc_1st_model_name, mc_1st_episode_rewards, mc_1st_episode_profits = strats.rl.mc.run(env, data, mode='First_Visit')
     mc_every_model_name, mc_every_episode_rewards, mc_every_episode_profits = strats.rl.mc.run(env, data,
