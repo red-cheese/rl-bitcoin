@@ -43,8 +43,8 @@ class Environment:
 
     @property
     def name(self):
-        return 'episodes{episodes}_gamma{gamma}_AK{AK}_min{min}_max{max}_returns{returns}'.format(
-            episodes=NUM_EPISODES, gamma=self.gamma, AK=self.max_buy_sell, min=self.min_position,
+        return 'episodes{episodes}_gamma{gamma}_alpha{alpha}_AK{AK}_min{min}_max{max}_returns{returns}'.format(
+            episodes=NUM_EPISODES, gamma=self.gamma, alpha=self.alpha, AK=self.max_buy_sell, min=self.min_position,
             max=self.max_position, returns=self.num_future_returns)
 
     def State(self, position, future_returns, is_terminal=False):
