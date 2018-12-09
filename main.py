@@ -7,6 +7,7 @@ import sys
 import strats.momentum
 import strats.rand
 import strats.rl.mc
+import strats.rl.q
 import strats.rl.toy_q_learning
 
 
@@ -50,6 +51,10 @@ def mc(data, mode):
     strats.rl.mc.run(data, mode=mode)
 
 
+def q(data):
+    strats.rl.q.run(data)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--frequency', help='Frequency of data: MIN (minute) or H (hour)')
@@ -57,7 +62,7 @@ def main():
     args = parser.parse_args(sys.argv[1:])
 
     frequency = args.frequency if args.frequency else 'H'
-    alg = args.alg if args.alg else 'mc_every_visit'
+    alg = args.alg if args.alg else 'q'
 
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
@@ -66,12 +71,14 @@ def main():
         momentum(data)
     elif alg == 'random':
         rand(data)
-    elif alg == 'toy_q':
-        toy_q(data)
+    # elif alg == 'toy_q':
+    #     toy_q(data)
     elif alg == 'mc_first_visit':
         mc(data, 'first_visit')
     elif alg == 'mc_every_visit':
         mc(data, 'every_visit')
+    elif alg == 'q':
+        q(data)
     else:
         raise ValueError("Unknown algorithm: '{}'".format(alg))
 
