@@ -46,8 +46,8 @@ def toy_q(data):
     strats.rl.toy_q_learning.run(data)
 
 
-def mc(data):
-    strats.rl.mc.run(data)
+def mc(data, mode):
+    strats.rl.mc.run(data, mode=mode)
 
 
 def main():
@@ -57,7 +57,7 @@ def main():
     args = parser.parse_args(sys.argv[1:])
 
     frequency = args.frequency if args.frequency else 'H'
-    alg = args.alg if args.alg else 'mc'
+    alg = args.alg if args.alg else 'mc_every_visit'
 
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
@@ -68,8 +68,10 @@ def main():
         rand(data)
     elif alg == 'toy_q':
         toy_q(data)
-    elif alg == 'mc':
-        mc(data)
+    elif alg == 'mc_first_visit':
+        mc(data, 'first_visit')
+    elif alg == 'mc_every_visit':
+        mc(data, 'every_visit')
     else:
         raise ValueError("Unknown algorithm: '{}'".format(alg))
 
