@@ -23,12 +23,10 @@ def baseline_policy(self, s):
 def run(env: setup.Environment, data):
     """Based on https://www.doc.ic.ac.uk/~mpd37/talks/2013-09-17-rl.pdf."""
 
-    # Preprocess to have returns: -1, 0, 1.
-    # Returns are padded so that the final state has env.num_future_returns all equal to 0.
+    # Note that returns are padded so that the final state has env.num_future_returns all equal to 0.
     prices = np.array([price for timestamp, price in data])
-    returns = np.zeros(shape=(prices.shape[0] + env.num_future_returns - 1,), dtype=np.int32)
-    returns[:-env.num_future_returns] = np.sign(prices[1:] - prices[:-1])
     num_steps = prices.shape[0]
+    returns = env.preprocess_returns(prices)
 
     episode_rewards = []  # Total episode rewards.
     episode_profits = []  # Total episode profits in $.
@@ -57,6 +55,7 @@ def run(env: setup.Environment, data):
         plot_utils.plot_step_trades(env.name, MODEL_NAME, episode_idx, prices, np.sign(realised_actions))
 
         print(MODEL_NAME, '/ End episode', episode_idx)
+        # Note that total_episode_reward won't make sense when returns are not simple (i.e. not -1, 0, 1).
         total_episode_reward = np.sum(realised_rewards)
         total_episode_profit = env.compute_total_profit(realised_states, realised_actions, prices)
         print(MODEL_NAME, '/ Total episode reward:', total_episode_reward)

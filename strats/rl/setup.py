@@ -30,6 +30,11 @@ class Environment:
                  min_position=-3,
                  max_position=+3,
                  num_future_returns=5,
+
+                 simple_returns=True,  # Whether to look at returns just as -1, 0, +1.
+                 # The following options are only processed when simple_returns=False.
+                 clip_returns=1.,
+                 returns_bins=199,  # Must be odd to include 0.
                  ):
         self.gamma = gamma
         self.alpha = alpha
@@ -39,13 +44,45 @@ class Environment:
 
         self.min_position = min_position
         self.max_position = max_position
-        self.num_future_returns = num_future_returns  # Possible return values: -1, 0, +1.
+        self.num_future_returns = num_future_returns
+
+        self.simple_returns = simple_returns
+        self.clip_returns = clip_returns
+        self.returns_bins = returns_bins  # Number of bins.
+        self.num_possible_returns = 3 if self.simple_returns else self.returns_bins
+        self.bins = None  # Will be set later if required.
 
     @property
     def name(self):
-        return 'episodes{episodes}_gamma{gamma}_alpha{alpha}_AK{AK}_min{min}_max{max}_returns{returns}'.format(
-            episodes=NUM_EPISODES, gamma=self.gamma, alpha=self.alpha, AK=self.max_buy_sell, min=self.min_position,
-            max=self.max_position, returns=self.num_future_returns)
+        return 'episodes{episodes}_gamma{gamma}_alpha{alpha}_AK{AK}_min{min}_max{max}_returns{returns}_' \
+               'simple{simple}_clip{clip}_bins{bins}'.format(
+                episodes=NUM_EPISODES, gamma=self.gamma, alpha=self.alpha, AK=self.max_buy_sell, min=self.min_position,
+                max=self.max_position, returns=self.num_future_returns, simple=self.simple_returns,
+                clip=self.clip_returns, bins=self.returns_bins)
+
+    def preprocess_returns(self, prices: np.array):
+        """Note that returns are padded so that the final state has env.num_future_returns all equal to 0."""
+
+        # Pad returns.
+        returns = np.zeros(shape=(prices.shape[0] + self.num_future_returns - 1,))
+        if self.simple_returns:
+            returns = returns.astype(np.int32)
+        returns[:-self.num_future_returns] = prices[1:] - prices[:-1]
+
+        if self.simple_returns:
+            return np.sign(returns)
+
+        returns[:-self.num_future_returns] = returns[:-self.num_future_returns] / prices[:-1]
+        returns = np.clip(returns, a_min=-self.clip_returns, a_max=self.clip_returns)
+
+        min_return = returns.min()
+        max_return = returns.max()
+        m = max(np.fabs(min_return), np.fabs(max_return))
+        self.bins = np.linspace(-m, m, num=self.returns_bins, endpoint=True)
+        assert len(self.bins) == self.returns_bins
+        new_returns = self.bins[np.digitize(returns, self.bins) - 1]
+
+        return new_returns
 
     def State(self, position, future_returns, is_terminal=False):
         """Build a state."""
@@ -100,7 +137,11 @@ class Environment:
     def future_returns_to_idx(self, future_returns):
         assert len(future_returns) == self.num_future_returns
         future_returns = np.asarray(future_returns)
-        return future_returns + 1
+
+        if self.simple_returns:
+            return future_returns + 1
+
+        return np.digitize(future_returns, self.bins) - 1
 
     def action_to_idx(self, a):
         return self.all_actions.index(a)

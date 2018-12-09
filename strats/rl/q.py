@@ -25,17 +25,15 @@ def policy(env, Q_table, s, epsilon):
 def run(env: setup.Environment, data):
     """Based on https://www.doc.ic.ac.uk/~mpd37/talks/2013-09-17-rl.pdf."""
 
-    # Preprocess to have returns: -1, 0, 1.
-    # Returns are padded so that the final state has env.num_future_returns all equal to 0.
+    # Note that returns are padded so that the final state has env.num_future_returns all equal to 0.
     prices = np.array([price for timestamp, price in data])
-    returns = np.zeros(shape=(prices.shape[0] + env.num_future_returns - 1,), dtype=np.int32)
-    returns[:-env.num_future_returns] = np.sign(prices[1:] - prices[:-1])
     num_steps = prices.shape[0]
+    returns = env.preprocess_returns(prices)
 
     # Init Q(s, a) with zeros.
     # Pairs of (s: State, a: A), where s = (position, future returns, is_terminal).
     shape = [env.max_position - env.min_position + 1]  # Positions.
-    shape.extend([3] * env.num_future_returns)  # Sequences of future returns.
+    shape.extend([env.returns_bins] * env.num_future_returns)  # Sequences of future returns.
     shape.append(2)  # is_terminal.
     shape.append(len(env.all_actions))  # Action.
     Q_table = np.zeros(shape=tuple(shape))
@@ -78,6 +76,7 @@ def run(env: setup.Environment, data):
         plot_utils.plot_step_trades(env.name, MODEL_NAME, episode_idx, prices, np.sign(realised_actions))
 
         print(MODEL_NAME, '/ End episode', episode_idx)
+        # Note that total_episode_reward won't make sense when returns are not simple (i.e. not -1, 0, 1).
         total_episode_reward = np.sum(realised_rewards)
         total_episode_profit = env.compute_total_profit(realised_states, realised_actions, prices)
         print(MODEL_NAME, '/ Total episode reward:', total_episode_reward)

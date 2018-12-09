@@ -54,7 +54,7 @@ def main():
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
 
-    env = strats.rl.setup.Environment(alpha=0.5)
+    env = strats.rl.setup.Environment(alpha=0.5, simple_returns=False)
 
     mc_1st_model_name, mc_1st_episode_rewards, mc_1st_episode_profits = strats.rl.mc.run(env, data, mode='First_Visit')
     mc_every_model_name, mc_every_episode_rewards, mc_every_episode_profits = strats.rl.mc.run(env, data,
@@ -62,12 +62,13 @@ def main():
     q_model_name, q_episode_rewards, q_episode_profits = strats.rl.q.run(env, data)
     baseline_model_name, baseline_episode_rewards, baseline_episode_profits = strats.rl.baseline.run(env, data)
 
-    # Plot all episode rewards to compare.
-    plot_utils.plot_episode_results(
-        env.name,
-        [q_model_name, baseline_model_name, mc_1st_model_name, mc_every_model_name],
-        [q_episode_rewards, baseline_episode_rewards, mc_1st_episode_rewards, mc_every_episode_rewards],
-        ylabel='Reward')
+    if env.simple_returns:
+        # Plot all episode rewards to compare.
+        plot_utils.plot_episode_results(
+            env.name,
+            [q_model_name, baseline_model_name, mc_1st_model_name, mc_every_model_name],
+            [q_episode_rewards, baseline_episode_rewards, mc_1st_episode_rewards, mc_every_episode_rewards],
+            ylabel='Reward')
 
     # Plot all episode profits to compare.
     plot_utils.plot_episode_results(
