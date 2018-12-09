@@ -14,22 +14,22 @@ class A:
     #A = 2K + 1.
     """
 
-    K = 2
+    K = 1
     ALL_ACTIONS = [i for i in range(-K, K + 1)]
     SIZE = 2 * K + 1
 
 
 class State:  # TODO Move A, State and utils to a separate package to be shared by all RL algorithms
 
-    MIN_POSITION = -1
-    MAX_POSITION = +1
-    NUM_FUTURE_RETURNS = 1  # Possible return values: -1, 0, +1.
+    MIN_POSITION = -3
+    MAX_POSITION = +3
+    NUM_FUTURE_RETURNS = 5  # Possible return values: -1, 0, +1.
 
     def __init__(self, position, future_returns, is_terminal=False):
         assert len(future_returns) == State.NUM_FUTURE_RETURNS
 
         future_returns = np.asarray(future_returns)
-        assert (-1 <= future_returns <= 1).all()
+        # assert (-1 <= future_returns <= 1).all()  # TODO when num_returns = 2
         if is_terminal:
             assert (future_returns == 0).all()
 
@@ -45,7 +45,8 @@ def is_allowed(s, a):
 
 def get_allowed_actions(s):
     if s.is_terminal:
-        allowed_actions = np.array([-s.position], dtype=np.int32)
+        # allowed_actions = np.array([-s.position], dtype=np.int32)
+        allowed_actions = np.array([0], dtype=np.int32)  # TODO for terminal state!!!
     else:
         allowed_actions = np.asarray([a for a in A.ALL_ACTIONS if is_allowed(s, a)], dtype=np.int32)
         assert (allowed_actions == np.sort(allowed_actions)).all()
@@ -64,7 +65,7 @@ def is_terminal_to_idx(is_terminal):
 def future_returns_to_idx(future_returns):
     assert len(future_returns) == State.NUM_FUTURE_RETURNS
     future_returns = np.asarray(future_returns)
-    assert (-1 <= future_returns <= 1).all()
+    # assert (-1 <= future_returns <= 1).all()  # TODO num returns 2
     return future_returns + 1
 
 
@@ -127,7 +128,7 @@ def get_next_state(s, a, s_idx, all_returns):
     s_prime = State(position=s.position + a,
                     future_returns=all_returns[(s_idx + 1):(s_idx + 1 + State.NUM_FUTURE_RETURNS)],
                     is_terminal=is_terminal)
-    assert -1 <= s_prime.position <= 1
+    assert State.MIN_POSITION <= s_prime.position <= State.MAX_POSITION
     return s_prime
 
 
@@ -148,7 +149,7 @@ def run(data):
     """Based on https://www.doc.ic.ac.uk/~mpd37/talks/2013-09-17-rl.pdf."""
 
     # Name for dir.
-    model_name = 'baseline_episodes{episodes}_gamma{gamma}_AK{AK}_min{min}_max{max}_returns{returns}'.format(
+    model_name = 'q_episodes{episodes}_gamma{gamma}_AK{AK}_min{min}_max{max}_returns{returns}'.format(
         episodes=NUM_EPISODES, gamma=GAMMA, AK=A.K, min=State.MIN_POSITION, max=State.MAX_POSITION,
         returns=State.NUM_FUTURE_RETURNS)
     # Name for plots.
@@ -186,8 +187,8 @@ def run(data):
         for step_idx in range(num_steps):
             # Choose the best "a" from "s" according to the policy based on Q.
             epsilon = compute_epsilon(episode_idx)
-            # a = policy(Q_table, s, epsilon)
-            a = baseline_policy(Q_table, s, epsilon)
+            a = policy(Q_table, s, epsilon)
+            # a = baseline_policy(Q_table, s, epsilon)
             s_prime = get_next_state(s, a, step_idx, returns)
             r = compute_reward(s, a)
 
