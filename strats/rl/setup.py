@@ -65,12 +65,10 @@ class Environment:
 
         # Pad returns.
         returns = np.zeros(shape=(prices.shape[0] + self.num_future_returns - 1,))
-        if self.simple_returns:
-            returns = returns.astype(np.int32)
         returns[:-self.num_future_returns] = prices[1:] - prices[:-1]
 
         if self.simple_returns:
-            return np.sign(returns)
+            return np.sign(returns).astype(np.int32)
 
         returns[:-self.num_future_returns] = returns[:-self.num_future_returns] / prices[:-1]
         returns = np.clip(returns, a_min=-self.clip_returns, a_max=self.clip_returns)
