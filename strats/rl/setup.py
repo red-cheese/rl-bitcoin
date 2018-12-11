@@ -210,7 +210,8 @@ class Environment:
         """
 
         if not self.simple_returns and self.returns_bins > 199 and self.num_future_returns > 2:
-            raise ValueError('{} / Too many possible return combinations to print Q network'.format(model_name))
+            print('{} / Too many possible return combinations to print Q network'.format(model_name))
+            return
 
         result = collections.defaultdict(int)
 
