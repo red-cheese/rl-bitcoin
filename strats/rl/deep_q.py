@@ -15,10 +15,10 @@ MODEL_NAME = 'Deep Q Learning with replay'
 def build_model(env):
     model = Sequential()
     # Make it 35 when simple_returns=True in main.py.
-    model.add(Dense(250, input_dim=env.feature_vector_size, activation='relu'))
+    model.add(Dense(400, input_dim=env.feature_vector_size, activation='relu'))
     model.add(Dense(len(env.all_actions), activation='linear'))
     model.compile(loss='mse',
-                  optimizer=Adam(lr=0.01))
+                  optimizer=Adam(lr=0.001))
     return model
 
 

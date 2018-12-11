@@ -60,7 +60,7 @@ def main():
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
 
-    env = strats.rl.setup.Environment(num_future_returns=1, simple_returns=False, alpha=0.5, gamma=0.001)
+    env = strats.rl.setup.Environment(num_future_returns=2, simple_returns=False, alpha=0.5, gamma=0.001)
 
     # mc_1st_model_name, mc_1st_episode_rewards, mc_1st_episode_profits = strats.rl.mc.run(env, data, mode='First_Visit')
     # mc_every_model_name, mc_every_episode_rewards, mc_every_episode_profits = strats.rl.mc.run(env, data,
