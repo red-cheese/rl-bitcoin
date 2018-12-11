@@ -57,6 +57,8 @@ def run(env: setup.Environment, data):
     mem = collections.deque(maxlen=500)
     batch_size = 64
 
+    Q_network = build_model(env)
+
     for episode_idx in range(setup.NUM_EPISODES):
         print(MODEL_NAME, '/ Play episode', episode_idx)
         s = env.State(position=0, future_returns=returns[:env.num_future_returns], is_terminal=False)
@@ -64,8 +66,6 @@ def run(env: setup.Environment, data):
         realised_actions = []
         realised_states = []
         realised_rewards = []
-
-        Q_network = build_model(env)
 
         for step_idx in range(num_steps):
             # Choose the best "a" from "s" according to the policy based on Q.
@@ -82,7 +82,7 @@ def run(env: setup.Environment, data):
             if s_prime is not None:
                 mem.append((s, a, r, s_prime))
 
-                if len(mem) >= batch_size and step_idx % 5 == 0:  # step_idx % 5 == 0 for speedup of debugging
+                if len(mem) >= batch_size and step_idx % 10 == 0:  # step_idx % 10 == 0 for speedup of debugging
                     minibatch = random.sample(mem, batch_size)
                     s_f_v_arr = []
                     target_f_arr = []
@@ -104,9 +104,6 @@ def run(env: setup.Environment, data):
             # Transition.
             s = s_prime
 
-        # Print Q:  # TODO
-        # (position, sign of first return, action) -> count
-
         # Plot episode realised actions.
         plot_utils.plot_step_trades(env.name, MODEL_NAME, episode_idx, prices, np.sign(realised_actions))
 
@@ -119,5 +116,10 @@ def run(env: setup.Environment, data):
         episode_profits.append(total_episode_profit)
         print(MODEL_NAME, '/ ================================')
         print()
+
+    # Print Q.
+    env.print_Q_network(MODEL_NAME, Q_network)
+    print(MODEL_NAME, '/ ================================')
+    print()
 
     return MODEL_NAME, episode_rewards, episode_profits

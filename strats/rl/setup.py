@@ -1,4 +1,7 @@
+import collections
+import itertools
 import numpy as np
+import operator
 
 
 START_EPSILON = 0.1
@@ -187,3 +190,52 @@ class Environment:
         assert len(trades) == len(prices)
         assert trades.sum() == 0
         return -(trades * prices).sum()
+
+    # =========================================================================
+
+    def generate_all_possible_future_returns(self):
+        if not self.simple_returns and self.returns_bins > 199 and self.num_future_returns > 2:
+            raise ValueError("Too many possible return combinations")
+
+        if self.simple_returns:
+            yield from itertools.product([-1, 0, 1], repeat=self.num_future_returns)
+        else:
+            yield from itertools.product(self.bins, repeat=self.num_future_returns)
+
+    def print_Q_network(self, model_name, Q_network):
+        """
+        Prints at least some representation of the learned Q network.
+        Idea: (position, sign of first future return, action) ->
+                    number of times "action" would be taken from this position with the given first future return
+        """
+
+        if not self.simple_returns and self.returns_bins > 199 and self.num_future_returns > 2:
+            raise ValueError('{} / Too many possible return combinations to print Q network'.format(model_name))
+
+        result = collections.defaultdict(int)
+
+        print(model_name, '/ Start building a comprehensive Q dict')
+
+        for position in range(self.min_position, self.max_position + 1):
+            for possible_returns in self.generate_all_possible_future_returns():
+                s = self.State(position, possible_returns, is_terminal=False)
+
+                allowed_actions = set(self.get_allowed_actions(s))
+                state_feature_vector = self.state_to_feature_vector(s)
+                Q_actions = Q_network.predict(state_feature_vector.reshape((1, -1)), batch_size=1)[0]
+
+                for a in self.all_actions:
+                    key = (s.position, np.sign(s.future_returns[0]), a)
+
+                    if a not in allowed_actions:
+                        assert result[key] == 0  # Don't register the key that's not allowed.
+
+                    elif Q_actions[self.action_to_idx(a)] == Q_actions.max():
+                        # This action is going to be chosen.
+                        result[key] += 1
+
+        print(model_name, '/ Finished building a comprehensive Q dict')
+
+        print(model_name, '/ Q:')
+        for key, value in sorted(result.items(), key=operator.itemgetter(0)):
+            print('\t\t{} -> {}'.format(key, value))
