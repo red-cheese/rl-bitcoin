@@ -6,6 +6,7 @@ NUM_EPISODES = 10
 
 
 def compute_epsilon(episode_idx):
+    # episode_idx = max(0, int(episode_idx - NUM_EPISODES / 2))  # TODO? More exploration?
     # Never explore in the last episode.
     return START_EPSILON / (episode_idx + 1) if episode_idx < NUM_EPISODES - 1 else 0.
 
@@ -59,6 +60,10 @@ class Environment:
                 episodes=NUM_EPISODES, gamma=self.gamma, alpha=self.alpha, AK=self.max_buy_sell, min=self.min_position,
                 max=self.max_position, returns=self.num_future_returns, simple=self.simple_returns,
                 clip=self.clip_returns, bins=self.returns_bins)
+
+    @property
+    def feature_vector_size(self):
+        return self.max_position - self.min_position + 1 + self.num_future_returns
 
     def preprocess_returns(self, prices: np.array):
         """Note that returns are padded so that the final state has env.num_future_returns all equal to 0."""
@@ -154,6 +159,14 @@ class Environment:
         idx1 = tuple(self.state_to_idx(s))
         idx2 = self.action_to_idx(a)
         return (*idx1, idx2)
+
+    # =========================================================================
+
+    def state_to_feature_vector(self, s):
+        feature_vector = np.zeros(shape=(self.feature_vector_size,))
+        feature_vector[self.position_to_idx(s.position)] = 1
+        feature_vector[-self.num_future_returns:] = s.future_returns
+        return feature_vector
 
     # =========================================================================
 

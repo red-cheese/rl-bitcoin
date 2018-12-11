@@ -13,6 +13,7 @@ import sys
 import strats.momentum
 import strats.rand
 import strats.rl.baseline
+import strats.rl.deep_q
 import strats.rl.mc
 import strats.rl.q
 import strats.rl.setup
@@ -59,27 +60,28 @@ def main():
     data = data_utils.load_aggregates(frequency)
     start_date, end_date = data[0][0], data[-1][0]
 
-    env = strats.rl.setup.Environment(simple_returns=False, alpha=0.5)
+    env = strats.rl.setup.Environment(num_future_returns=1, simple_returns=False, alpha=0.5, gamma=0.001)
 
-    mc_1st_model_name, mc_1st_episode_rewards, mc_1st_episode_profits = strats.rl.mc.run(env, data, mode='First_Visit')
-    mc_every_model_name, mc_every_episode_rewards, mc_every_episode_profits = strats.rl.mc.run(env, data,
-                                                                                               mode='Every_Visit')
-    q_model_name, q_episode_rewards, q_episode_profits = strats.rl.q.run(env, data)
+    # mc_1st_model_name, mc_1st_episode_rewards, mc_1st_episode_profits = strats.rl.mc.run(env, data, mode='First_Visit')
+    # mc_every_model_name, mc_every_episode_rewards, mc_every_episode_profits = strats.rl.mc.run(env, data,
+    #                                                                                            mode='Every_Visit')
+    # q_model_name, q_episode_rewards, q_episode_profits = strats.rl.q.run(env, data)
+    deep_q_model_name, deep_q_episode_rewards, deep_q_episode_profits = strats.rl.deep_q.run(env, data)
+
     baseline_model_name, baseline_episode_rewards, baseline_episode_profits = strats.rl.baseline.run(env, data)
 
-    if env.simple_returns:
-        # Plot all episode rewards to compare.
-        plot_utils.plot_episode_results(
-            env.name,
-            [q_model_name, baseline_model_name, mc_1st_model_name, mc_every_model_name],
-            [q_episode_rewards, baseline_episode_rewards, mc_1st_episode_rewards, mc_every_episode_rewards],
-            ylabel='Reward')
+    # Plot all episode rewards to compare.
+    plot_utils.plot_episode_results(
+        env.name,
+        [baseline_model_name, deep_q_model_name],
+        [baseline_episode_rewards, deep_q_episode_rewards],
+        ylabel='Reward')
 
     # Plot all episode profits to compare.
     plot_utils.plot_episode_results(
         env.name,
-        [q_model_name, baseline_model_name, mc_1st_model_name, mc_every_model_name],
-        [q_episode_profits, baseline_episode_profits, mc_1st_episode_profits, mc_every_episode_profits])
+        [baseline_model_name, deep_q_model_name],
+        [baseline_episode_profits, deep_q_episode_profits])
 
     print()
     print('=============')
