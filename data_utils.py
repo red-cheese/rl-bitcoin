@@ -24,7 +24,6 @@ ALL_FREQUENCIES = {
 }
 
 
-# TODO Support a flag to aggregate by hour and other periods
 def aggregate(in_file=ALL_TRADES_FILE, out_file=ALL_TRADES_AGG_MIN_FILE):
     aggs = []
 
@@ -41,7 +40,7 @@ def aggregate(in_file=ALL_TRADES_FILE, out_file=ALL_TRADES_AGG_MIN_FILE):
 
             if dt >= next_dt:
                 # Flush prices for each time point in between.
-                last_price = prices[-1]  # TODO Also track: mean and total?
+                last_price = prices[-1]
                 while dt >= next_dt:
                     aggs.append((next_dt, last_price))
                     next_dt += delta

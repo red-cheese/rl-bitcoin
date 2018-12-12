@@ -14,8 +14,8 @@ MODEL_NAME = 'Deep Q Learning with replay'
 
 def build_model(env):
     model = Sequential()
-    # Make it 35 when simple_returns=True in main.py.
-    model.add(Dense(400, input_dim=env.feature_vector_size, activation='relu'))
+    model.add(Dense(100, input_dim=env.feature_vector_size, activation='relu'))
+    model.add(Dense(20, activation='relu'))
     model.add(Dense(len(env.all_actions), activation='linear'))
     model.compile(loss='mse',
                   optimizer=Adam(lr=0.001))
@@ -98,8 +98,8 @@ def run(env: setup.Environment, data):
                                   np.asarray(target_f_arr).reshape((batch_size, -1)),
                                   batch_size=batch_size, epochs=1, verbose=0)
 
-            if step_idx % 100 == 0:
-                print('Done step index', step_idx, 'out of', num_steps)
+            if step_idx % 1000 == 0:
+                print(MODEL_NAME, '/ Done step index', step_idx, 'out of', num_steps)
 
             # Transition.
             s = s_prime

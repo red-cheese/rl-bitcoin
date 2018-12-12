@@ -4,14 +4,13 @@ import numpy as np
 import operator
 
 
-START_EPSILON = 0.1
-NUM_EPISODES = 50
+START_EPSILON = 0.2
+NUM_EPISODES = 100
 
 
 def compute_epsilon(episode_idx):
-    # episode_idx = max(0, int(episode_idx - NUM_EPISODES / 2))  # TODO? More exploration?
     # Never explore in the last episode.
-    return START_EPSILON / (episode_idx + 1) if episode_idx < NUM_EPISODES - 1 else 0.
+    return START_EPSILON * (0.95 ** episode_idx) if episode_idx < NUM_EPISODES - 1 else 0.
 
 
 class _State:
@@ -209,7 +208,9 @@ class Environment:
                     number of times "action" would be taken from this position with the given first future return
         """
 
-        if not self.simple_returns and self.returns_bins > 199 and self.num_future_returns > 2:
+        return  # TODO Remove this
+
+        if not self.simple_returns and (self.returns_bins > 199 or self.num_future_returns > 2):
             print('{} / Too many possible return combinations to print Q network'.format(model_name))
             return
 
@@ -229,8 +230,9 @@ class Environment:
                     key = (s.position, np.sign(s.future_returns[0]), a)
 
                     if a not in allowed_actions:
-                        assert result[key] == 0  # Don't register the key that's not allowed.
+                        assert key not in result  # Don't register the key that's not allowed.
 
+                    # TODO This is wrong - must choose the max Q across ALLOWED actions
                     elif Q_actions[self.action_to_idx(a)] == Q_actions.max():
                         # This action is going to be chosen.
                         result[key] += 1
