@@ -5,7 +5,7 @@ import operator
 
 
 START_EPSILON = 0.2
-NUM_EPISODES = 100
+NUM_EPISODES = 50
 
 
 def compute_epsilon(episode_idx):

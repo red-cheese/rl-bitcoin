@@ -50,7 +50,7 @@ def plot_step_trades(env_name, model_name, episode_idx, all_prices, all_trades):
     prices = all_prices[-num:]
     trades = all_trades[-num:]
 
-    plt.title('Last {} prices and actions'.format(num))
+    plt.title('Last {} prices and actions: {}'.format(num, model_name))
     plt.xlabel('Step')
     plt.ylabel('BTC price$')
     plt.plot(prices)
